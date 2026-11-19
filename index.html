@@ -1,0 +1,246 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Что у меня заблокировано — проверка YouTube, Instagram, Discord, ChatGPT</title>
+<meta name="description" content="Проверьте за 10 секунд, какие сервисы не открываются в вашей сети: YouTube, Instagram, WhatsApp, Discord, ChatGPT и другие. Проверка идёт из вашего браузера, результаты никуда не отправляются">
+<meta property="og:title" content="Что у меня заблокировано">
+<meta property="og:description" content="Проверка за 10 секунд: YouTube, Instagram, WhatsApp, Discord, ChatGPT и другие">
+<meta property="og:image" content="https://kochurin.github.io/blockcheck/preview.png">
+<meta property="og:type" content="website">
+<link rel="icon" href="dragon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--bg1:#fbfbfc;--bg2:#ececee;--bg3:#dcdcdf;--ink:#111;--grey:#9b9b9f;--muted:#6b6b70;--card:#ffffffcc;--line:#00000014;--ok:#1f9d55;--slow:#d08a00;--bad:#d64040}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{min-height:100vh;font-family:Montserrat,system-ui,sans-serif;color:var(--ink);
+ background:radial-gradient(ellipse 70% 60% at 50% 30%,var(--bg1) 0%,var(--bg2) 55%,var(--bg3) 100%) fixed}
+.wrap{max-width:920px;margin:0 auto;padding:48px 16px 40px;position:relative}
+.dragon{position:fixed;right:-60px;top:40px;height:88vh;opacity:.07;pointer-events:none;z-index:0}
+main{position:relative;z-index:1}
+.k{font-weight:700;font-size:14px;letter-spacing:8px}
+h1{margin:12px 0 0;font-weight:900;font-size:clamp(40px,8vw,76px);line-height:.98;letter-spacing:-2px;text-transform:uppercase}
+h1 span{display:block;color:var(--grey)}
+.lead{margin:22px 0 0;font-size:17px;line-height:1.55;color:#444;max-width:640px}
+.lead b{color:var(--ink)}
+.bar{display:flex;flex-wrap:wrap;gap:12px;align-items:center;margin:28px 0 8px}
+button,.btn{font:inherit;font-weight:700;font-size:16px;border:0;border-radius:40px;padding:14px 24px;cursor:pointer;text-decoration:none;display:inline-block}
+.primary{background:var(--ink);color:#fff}
+.ghost{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 2px var(--ink)}
+button:disabled{opacity:.5;cursor:default}
+.status{font-size:15px;color:var(--muted)}
+.summary{margin:26px 0 0;padding:22px 24px;border-radius:20px;background:var(--card);box-shadow:0 20px 50px #0000000f;display:none}
+.summary h2{margin:0;font-size:26px;font-weight:900;letter-spacing:-.5px}
+.summary p{margin:10px 0 0;font-size:16px;line-height:1.55;color:#444}
+.summary .actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:18px}
+.groups{margin-top:26px;display:grid;gap:22px}
+.g h3{margin:0 0 10px;font-size:13px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:var(--muted)}
+.grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}
+.item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:0 1px 0 var(--line)}
+.item .n{font-weight:600;font-size:16px}
+.item .s{font-size:13px;font-weight:700;white-space:nowrap;color:var(--muted)}
+.item .s::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#c8c8cc;margin-right:7px;vertical-align:1px}
+.item.ok .s{color:var(--ok)}.item.ok .s::before{background:var(--ok)}
+.item.slow .s{color:var(--slow)}.item.slow .s::before{background:var(--slow)}
+.item.bad .s{color:var(--bad)}.item.bad .s::before{background:var(--bad)}
+.item.wait .s::before{animation:p 1s infinite}
+@keyframes p{50%{opacity:.3}}
+.note{margin-top:30px;font-size:14px;line-height:1.6;color:var(--muted);max-width:680px}
+.note b{color:var(--ink)}
+footer{margin-top:36px;padding-top:18px;border-top:2px solid var(--ink);display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
+footer b{color:var(--ink)}
+footer a{color:var(--ink)}
+@media (max-width:600px){.wrap{padding-top:32px}.dragon{height:60vh;right:-120px}.item{padding:12px 14px}}
+</style>
+</head>
+<body>
+<img class="dragon" src="dragon.png" alt="">
+<div class="wrap"><main>
+  <div class="k">SKYRIMVPN</div>
+  <h1>Что у меня<span>заблокировано</span></h1>
+  <p class="lead">Проверка идёт прямо из вашего браузера через вашу сеть, поэтому дома по Wi-Fi и на мобильном интернете результат будет разный. <b>Выключите VPN перед проверкой</b>, иначе всё откроется</p>
+
+  <div class="bar">
+    <button class="primary" id="run">Проверить ещё раз</button>
+    <span class="status" id="status">Проверяю…</span>
+  </div>
+
+  <section class="summary" id="summary">
+    <h2 id="sumTitle"></h2>
+    <p id="sumText"></p>
+    <div class="actions" id="sumActions"></div>
+  </section>
+
+  <div class="groups" id="groups"></div>
+
+  <p class="note"><b>Как это работает.</b> Страница пробует загрузить маленький файл с каждого сервиса. Не ответил за 8 секунд или соединение оборвалось — сервис помечается как недоступный. Отвечает дольше 3 секунд — как медленный. Результаты остаются у вас в браузере и никуда не отправляются</p>
+
+  <footer>
+    <span><b>Сеть есть. Интернет тоже</b></span>
+    <span>Код открыт: <a href="https://github.com/Kochurin/blockcheck">github.com/Kochurin/blockcheck</a></span>
+    <span><a href="https://kochurin.github.io/whitelist-guide/">Гайд по белым спискам</a></span>
+  </footer>
+</main></div>
+
+<script>
+const BOT = "https://t.me/SkyrimVPN_bot?start=blockcheck";
+const SITE = "https://skyrim.connecto.lol/?utm_source=blockcheck";
+const PAGE = "https://kochurin.github.io/blockcheck/";
+const TIMEOUT = 8000, SLOW = 3000;
+
+const GROUPS = [
+  ["Видео и музыка", [
+    ["YouTube", "https://www.youtube.com/favicon.ico"],
+    ["Twitch", "https://www.twitch.tv/favicon.ico"],
+    ["Netflix", "https://www.netflix.com/favicon.ico"],
+    ["Spotify", "https://open.spotify.com/favicon.ico"],
+    ["SoundCloud", "https://soundcloud.com/favicon.ico"],
+  ]],
+  ["Соцсети", [
+    ["Instagram", "https://www.instagram.com/favicon.ico"],
+    ["Facebook", "https://www.facebook.com/favicon.ico"],
+    ["X (Twitter)", "https://x.com/favicon.ico"],
+    ["Reddit", "https://www.reddit.com/favicon.ico"],
+    ["LinkedIn", "https://www.linkedin.com/favicon.ico"],
+  ]],
+  ["Мессенджеры", [
+    ["WhatsApp", "https://web.whatsapp.com/favicon.ico"],
+    ["Telegram Web", "https://web.telegram.org/favicon.ico"],
+    ["Discord", "https://discord.com/favicon.ico"],
+    ["Signal", "https://signal.org/favicon.ico"],
+  ]],
+  ["Нейросети и поиск", [
+    ["ChatGPT", "https://chatgpt.com/favicon.ico"],
+    ["Gemini", "https://gemini.google.com/favicon.ico"],
+    ["Google", "https://www.google.com/favicon.ico"],
+    ["Википедия", "https://ru.wikipedia.org/favicon.ico"],
+  ]],
+  ["Российские сайты", [
+    ["Яндекс", "https://ya.ru/favicon.ico"],
+    ["ВКонтакте", "https://vk.com/favicon.ico"],
+    ["Госуслуги", "https://www.gosuslugi.ru/favicon.ico"],
+  ], true],
+];
+
+const $ = id => document.getElementById(id);
+let items = [];
+
+function render() {
+  $("groups").innerHTML = "";
+  items = [];
+  for (const [title, list, local] of GROUPS) {
+    const g = document.createElement("div");
+    g.className = "g";
+    g.innerHTML = `<h3>${title}</h3><div class="grid"></div>`;
+    const grid = g.querySelector(".grid");
+    for (const [name, url] of list) {
+      const el = document.createElement("div");
+      el.className = "item wait";
+      el.innerHTML = `<span class="n">${name}</span><span class="s">проверяю</span>`;
+      grid.appendChild(el);
+      items.push({ name, url, local: !!local, el, state: "wait" });
+    }
+    $("groups").appendChild(g);
+  }
+}
+
+async function probe(url) {
+  const ctrl = new AbortController();
+  const timer = setTimeout(() => ctrl.abort(), TIMEOUT);
+  const t0 = performance.now();
+  try {
+    await fetch(url + "?_=" + Date.now(), { mode: "no-cors", cache: "no-store", signal: ctrl.signal });
+    return performance.now() - t0;
+  } catch (e) {
+    return null;
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+async function check(it) {
+  let best = await probe(it.url);
+  if (best === null || best > SLOW) {
+    const again = await probe(it.url);
+    if (again !== null && (best === null || again < best)) best = again;
+  }
+  it.state = best === null ? "bad" : best > SLOW ? "slow" : "ok";
+  it.el.className = "item " + it.state;
+  it.el.querySelector(".s").textContent =
+    it.state === "ok" ? "открывается" : it.state === "slow" ? "медленно" : "не открывается";
+}
+
+function summarize() {
+  const foreign = items.filter(i => !i.local);
+  const local = items.filter(i => i.local);
+  const bad = foreign.filter(i => i.state === "bad");
+  const slow = foreign.filter(i => i.state === "slow");
+  const localOk = local.some(i => i.state !== "bad");
+  const s = $("summary"), t = $("sumTitle"), p = $("sumText"), a = $("sumActions");
+  s.style.display = "block";
+  a.innerHTML = "";
+
+  if (!localOk) {
+    t.textContent = "Похоже, интернета нет совсем";
+    p.textContent = "Не открываются даже Яндекс и Госуслуги. Проверьте подключение и запустите проверку ещё раз";
+    $("status").textContent = "Готово";
+    return;
+  }
+
+  const ok = foreign.length - bad.length - slow.length;
+  $("status").textContent = `Готово: открывается ${ok} из ${foreign.length}`;
+
+  if (!bad.length && !slow.length) {
+    t.textContent = "Всё открывается";
+    p.textContent = "Если включён VPN, выключите его и проверьте снова. На мобильном интернете результат может отличаться от Wi-Fi";
+    addShare(a, `Проверил, что у меня заблокировано: всё открывается. Проверь у себя`);
+    return;
+  }
+
+  const names = bad.concat(slow).map(i => i.name);
+  const whitelist = bad.length >= foreign.length * 0.7;
+  t.textContent = whitelist
+    ? "Похоже на белые списки"
+    : `Не открывается ${bad.length + slow.length} из ${foreign.length}`;
+  p.innerHTML = (whitelist
+    ? "Российские сайты работают, а почти всё остальное нет. Так выглядят белые списки на мобильном интернете. В SkyrimVPN для этого есть серверы «📱&nbsp;Мобильный | АВТО»"
+    : `Проблемы с: <b>${names.join(", ")}</b>. VPN откроет их все`)
+    + ". Первые 3 дня бесплатно";
+  a.innerHTML = `<a class="btn primary" href="${BOT}" target="_blank" rel="noopener">Попробовать в Telegram</a>
+    <a class="btn ghost" href="${SITE}" target="_blank" rel="noopener">На сайте, без Telegram</a>`;
+  addShare(a, `У меня не открывается ${bad.length + slow.length} из ${foreign.length} сервисов. Проверь у себя`);
+}
+
+function addShare(box, text) {
+  const b = document.createElement("button");
+  b.className = "ghost";
+  b.textContent = "Поделиться";
+  b.onclick = async () => {
+    const full = `${text}: ${PAGE}`;
+    try {
+      if (navigator.share) { await navigator.share({ text: full }); return; }
+    } catch (e) { return; }
+    try { await navigator.clipboard.writeText(full); b.textContent = "Ссылка скопирована"; }
+    catch (e) { prompt("Скопируйте ссылку", full); }
+  };
+  box.appendChild(b);
+}
+
+async function run() {
+  $("run").disabled = true;
+  $("status").textContent = "Проверяю…";
+  $("summary").style.display = "none";
+  render();
+  await Promise.all(items.map(check));
+  summarize();
+  $("run").disabled = false;
+}
+
+$("run").onclick = run;
+run();
+</script>
+</body>
+</html>
