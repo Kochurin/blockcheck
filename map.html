@@ -51,11 +51,13 @@ td.c{font-variant-numeric:tabular-nums}
 .cta .acts{display:flex;flex-wrap:wrap;gap:8px}
 .btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:40px;padding:13px 20px;cursor:pointer;text-decoration:none;display:inline-block}
 .b1{background:#fff;color:var(--ink)}.b2{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px #fff}
-.globe-wrap{position:relative;margin-top:22px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#1d2333 0%,#0b0d12 70%);height:min(78vh,620px)}
+.globe-wrap{position:relative;margin-top:22px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#1d2333 0%,#0b0d12 70%);height:min(80vh,660px)}
 #globe{width:100%;height:100%;cursor:grab}
 .gcap{position:absolute;left:18px;top:16px;color:#fff;font-weight:900;font-size:20px;letter-spacing:-.3px;pointer-events:none}
 .gcap small{display:block;font-weight:500;font-size:13px;color:#b9bcc6;letter-spacing:0;margin-top:4px}
-.glegend{position:absolute;left:18px;bottom:14px;display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#d6d8de;pointer-events:none}
+.glegend{position:absolute;left:18px;bottom:14px;display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#444;pointer-events:none;background:#ffffffcc;border-radius:20px;padding:6px 12px}
+.gattr{position:absolute;right:12px;bottom:10px;font-size:11px;color:#666;background:#ffffffcc;border-radius:10px;padding:3px 8px}
+.gattr a{color:#444}
 .glegend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;margin-right:5px}
 .gtip{background:#fff;color:#111;border-radius:12px;padding:10px 12px;font:600 13px Montserrat,sans-serif;box-shadow:0 10px 30px #0006;max-width:240px;line-height:1.45}
 .gtip b{font-size:15px;font-weight:900}
@@ -83,8 +85,9 @@ footer a{color:var(--ink)}footer b{color:var(--ink)}
 
   <section class="globe-wrap">
     <div id="globe"></div>
-    <div class="gcap">Карта проверок<small>Крутите глобус, наводите на столбики</small></div>
+    <div class="gcap">Карта проверок<small>Крутите глобус, приближайте колёсиком, наводите на столбики</small></div>
     <div class="glegend"><span><i style="background:#3fbf6a"></i>открывается</span><span><i style="background:#e8b23a"></i>частично</span><span><i style="background:#e0443e"></i>блокируют</span><span><i style="background:#8a8f9c"></i>мало проверок</span></div>
+    <div class="gattr">Снимки © <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>, Maxar, Earthstar Geographics</div>
   </section>
 
   <div id="body"></div>
@@ -151,17 +154,18 @@ function drawGlobe(list) {
   const pts = Object.entries(window.REGIONS).map(([c, [name, lat, lng]]) => {
     const g = by[c] || { n: 0 }, b = avgBad(g);
     const col = b == null ? "#8a8f9c" : b < 25 ? "#3fbf6a" : b < 60 ? "#e8b23a" : "#e0443e";
-    return { lat, lng, name, g, b, col, alt: g.n ? Math.min(0.04 + g.n / 40, 0.45) : 0.012, r: g.n ? 0.55 : 0.32 };
+    return { lat, lng, name, g, b, col, alt: g.n ? Math.min(0.04 + g.n / 40, 0.45) : 0.004, r: g.n ? 0.5 : 0.22 };
   });
   const tip = p => `<div class="gtip"><b>${p.name}</b><br>${p.g.n ? `Проверок: ${p.g.n}` : "Пока нет проверок"}${p.g.bad
     ? `<br>Белые списки: ${p.g.wl}%<br>${SHOW.filter(s => p.g.bad[s] >= 50).map(s => `✕ ${s} ${p.g.bad[s]}%`).join("<br>") || "Почти всё открывается"}` : p.g.n ? "<br>Мало проверок для выводов" : ""}</div>`;
   if (!globe) {
     const el = document.getElementById("globe");
     globe = Globe()(el)
-      .globeImageUrl("https://cdn.jsdelivr.net/npm/three-globe@2.45.3/example/img/earth-blue-marble.jpg")
-      .bumpImageUrl("https://cdn.jsdelivr.net/npm/three-globe@2.45.3/example/img/earth-topology.png")
+      // тайлы карты: при приближении подгружаются чёткие куски, вплоть до улиц
+      .globeTileEngineUrl((x, y, l) => `https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/${l}/${y}/${x}`)
+      .globeTileEngineMaxLevel(17)
       .backgroundColor("rgba(0,0,0,0)")
-      .atmosphereColor("#9fb8ff").atmosphereAltitude(0.18)
+      .atmosphereColor("#9fb8ff").atmosphereAltitude(0.16)
       .pointLat("lat").pointLng("lng").pointAltitude("alt").pointRadius("r").pointColor("col").pointLabel(tip)
       .pointsMerge(false).pointsTransitionDuration(800);
     globe.pointOfView({ lat: 57, lng: 75, altitude: 1.9 }, 0);

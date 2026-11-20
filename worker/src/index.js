@@ -45,11 +45,18 @@ async function report(req, env, origin) {
   const dup = await env.DB.prepare("INSERT OR IGNORE INTO seen (h, ts) VALUES (?, ?)").bind(h, Date.now()).run();
   if (!dup.meta.changes) return json({ ok: true, counted: false }, origin);
 
+  // Крым, Севастополь, ДНР, ЛНР, Запорожская и Херсонская области приходят от геобаз с кодами Украины
+  // Переводим их в свои коды; сети украинских операторов не трогаем
+  let country = cf.country || null, rc = cf.regionCode || null;
+  const NEW = { "43": "CR", "40": "SEV", "14": "DPR", "09": "LPR", "23": "ZAP", "65": "KHE" };
+  if (country === "UA" && NEW[rc] && !/kyivstar|vodafone ukr|lifecell|ukrtelecom|volia|datagroup|triolan/i.test(cf.asOrganization || "")) {
+    country = "RU"; rc = NEW[rc];
+  }
   const foreignBad = SERVICES.filter(s => res[s] === "bad").length;
   const localOk = LOCAL.some(s => res[s] !== "bad");
   const wl = localOk && foreignBad >= SERVICES.length * 0.7 ? 1 : 0;
   await env.DB.prepare("INSERT INTO reports (ts, country, region, rc, op, res, wl) VALUES (?, ?, ?, ?, ?, ?, ?)")
-    .bind(Date.now(), cf.country || null, cf.region || null, cf.regionCode || null, opName(cf.asOrganization), JSON.stringify(res), wl).run();
+    .bind(Date.now(), country, cf.region || null, rc, opName(cf.asOrganization), JSON.stringify(res), wl).run();
   return json({ ok: true, counted: true, op: opName(cf.asOrganization), region: cf.region || null }, origin);
 }
 
