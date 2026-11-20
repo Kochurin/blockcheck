@@ -1,0 +1,210 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Блокировки сейчас — что не открывается у МТС, Билайна, МегаФона, Т2 и по регионам</title>
+<meta name="description" content="Живая сводка блокировок в России по результатам проверок пользователей: какие сервисы не открываются у каждого оператора и в каждом регионе, где включены белые списки">
+<meta property="og:title" content="Блокировки сейчас">
+<meta property="og:description" content="Что не открывается у вашего оператора и в вашем регионе — по проверкам пользователей за последние сутки">
+<meta property="og:image" content="https://kochurin.github.io/blockcheck/map-preview.png">
+<link rel="icon" href="dragon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700;900&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#111;--grey:#9b9b9f;--muted:#6b6b70;--card:#ffffffd9;--line:#00000012}
+*{box-sizing:border-box}html,body{margin:0}
+body{min-height:100vh;font-family:Montserrat,system-ui,sans-serif;color:var(--ink);
+ background:radial-gradient(ellipse 70% 60% at 50% 20%,#fbfbfc 0%,#ececee 55%,#dcdcdf 100%) fixed}
+.wrap{max-width:1100px;margin:0 auto;padding:44px 16px 40px;position:relative}
+.dragon{position:fixed;right:-80px;top:40px;height:88vh;opacity:.06;pointer-events:none}
+main{position:relative}
+.k{font-weight:700;font-size:14px;letter-spacing:8px}
+h1{margin:12px 0 0;font-weight:900;font-size:clamp(40px,8vw,76px);line-height:.98;letter-spacing:-2px;text-transform:uppercase}
+h1 span{display:block;color:var(--grey)}
+.lead{margin:20px 0 0;font-size:17px;line-height:1.55;color:#444;max-width:720px}
+.lead a{color:var(--ink);font-weight:700}
+.bar{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin:26px 0 0}
+.chip{font:inherit;font-weight:600;font-size:15px;border:0;border-radius:40px;padding:10px 16px;cursor:pointer;background:#ffffffb0;box-shadow:inset 0 0 0 1.5px var(--line)}
+.chip[aria-pressed=true]{background:var(--ink);color:#fff;box-shadow:none}
+.status{font-size:14px;color:var(--muted);margin-left:6px}
+.kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px;margin-top:22px}
+.kpi{background:var(--card);border-radius:18px;padding:16px 18px}
+.kpi b{display:block;font-size:34px;font-weight:900;letter-spacing:-1px}
+.kpi small{font-size:14px;color:var(--muted)}
+h2{margin:36px 0 12px;font-size:22px;font-weight:900;letter-spacing:-.3px}
+.hint{font-size:14px;color:var(--muted);margin:-4px 0 12px}
+.tbl{overflow-x:auto;background:var(--card);border-radius:18px;padding:6px}
+table{border-collapse:separate;border-spacing:3px;width:100%;font-size:14px}
+th{font-weight:700;color:var(--muted);font-size:12px;text-align:center;padding:6px 4px;white-space:nowrap}
+th.n{text-align:left}
+td{text-align:center;padding:9px 6px;border-radius:8px;font-weight:700;white-space:nowrap}
+td.n{text-align:left;font-weight:600;background:transparent;padding-left:10px}
+td.c{font-variant-numeric:tabular-nums}
+.empty{background:var(--card);border-radius:18px;padding:22px;font-size:16px;line-height:1.55;color:#444}
+.empty a{color:var(--ink);font-weight:700}
+.legend{display:flex;flex-wrap:wrap;gap:12px;font-size:13px;color:var(--muted);margin-top:10px}
+.legend i{display:inline-block;width:14px;height:14px;border-radius:4px;vertical-align:-2px;margin-right:6px}
+.cta{margin-top:34px;padding:22px 24px;border-radius:20px;background:var(--ink);color:#fff;display:flex;flex-wrap:wrap;gap:12px 20px;align-items:center;justify-content:space-between}
+.cta p{margin:6px 0 0;color:#cfcfd4;font-size:15px}
+.cta b{font-size:19px}
+.cta .acts{display:flex;flex-wrap:wrap;gap:8px}
+.btn{font:inherit;font-weight:700;font-size:15px;border:0;border-radius:40px;padding:13px 20px;cursor:pointer;text-decoration:none;display:inline-block}
+.b1{background:#fff;color:var(--ink)}.b2{background:transparent;color:#fff;box-shadow:inset 0 0 0 2px #fff}
+.globe-wrap{position:relative;margin-top:22px;border-radius:24px;overflow:hidden;background:radial-gradient(circle at 50% 45%,#1d2333 0%,#0b0d12 70%);height:min(78vh,620px)}
+#globe{width:100%;height:100%;cursor:grab}
+.gcap{position:absolute;left:18px;top:16px;color:#fff;font-weight:900;font-size:20px;letter-spacing:-.3px;pointer-events:none}
+.gcap small{display:block;font-weight:500;font-size:13px;color:#b9bcc6;letter-spacing:0;margin-top:4px}
+.glegend{position:absolute;left:18px;bottom:14px;display:flex;flex-wrap:wrap;gap:10px;font-size:12px;color:#d6d8de;pointer-events:none}
+.glegend i{display:inline-block;width:12px;height:12px;border-radius:50%;vertical-align:-2px;margin-right:5px}
+.gtip{background:#fff;color:#111;border-radius:12px;padding:10px 12px;font:600 13px Montserrat,sans-serif;box-shadow:0 10px 30px #0006;max-width:240px;line-height:1.45}
+.gtip b{font-size:15px;font-weight:900}
+.more{font:inherit;font-weight:700;font-size:14px;border:0;background:none;color:var(--ink);text-decoration:underline;cursor:pointer;padding:10px 4px}
+.nodata td{color:#aaa;font-weight:500}
+footer{margin-top:30px;padding-top:16px;border-top:2px solid var(--ink);font-size:14px;line-height:1.6;color:var(--muted)}
+footer a{color:var(--ink)}footer b{color:var(--ink)}
+</style>
+</head>
+<body>
+<img class="dragon" src="dragon.png" alt="">
+<div class="wrap"><main>
+  <div class="k">SKYRIMVPN</div>
+  <h1>Блокировки<span>сейчас</span></h1>
+  <p class="lead">Сводка по проверкам людей, которые прошли <a href="./">«Что у меня заблокировано»</a>. Оператора и регион определяет сервер по подключению, IP-адреса не сохраняются. Пройдите проверку сами — ваш результат тоже попадёт сюда</p>
+
+  <div class="bar" id="period">
+    <button class="chip" data-h="6">6 часов</button>
+    <button class="chip" data-h="24" aria-pressed="true">Сутки</button>
+    <button class="chip" data-h="168">Неделя</button>
+    <span class="status" id="status">Загружаю…</span>
+  </div>
+
+  <div class="kpis" id="kpis"></div>
+
+  <section class="globe-wrap">
+    <div id="globe"></div>
+    <div class="gcap">Карта проверок<small>Крутите глобус, наводите на столбики</small></div>
+    <div class="glegend"><span><i style="background:#3fbf6a"></i>открывается</span><span><i style="background:#e8b23a"></i>частично</span><span><i style="background:#e0443e"></i>блокируют</span><span><i style="background:#8a8f9c"></i>мало проверок</span></div>
+  </section>
+
+  <div id="body"></div>
+
+  <div class="cta">
+    <div><b>У вашего оператора что-то не открывается?</b><p>SkyrimVPN работает и на белых списках: серверы «📱&nbsp;Мобильный | АВТО». Первые 3 дня бесплатно</p></div>
+    <div class="acts">
+      <a class="btn b1" href="https://t.me/SkyrimVPN_bot?start=blockmap" target="_blank" rel="noopener">Попробовать в Telegram</a>
+      <a class="btn b2" href="https://skyrim.connecto.lol/?utm_source=blockmap" target="_blank" rel="noopener">На сайте</a>
+    </div>
+  </div>
+
+  <footer>
+    <b>Сеть есть. Интернет тоже</b> · <a href="./">Проверить себя</a> · <a href="https://kochurin.github.io/whitelist-guide/">Гайд по белым спискам</a> · Код открыт: <a href="https://github.com/Kochurin/blockcheck">github.com/Kochurin/blockcheck</a><br>
+    Группы, где меньше 3 проверок, не показываются. Данные старше 30 дней удаляются
+  </footer>
+</main></div>
+
+<script src="regions.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/globe.gl@2.45.3/dist/globe.gl.min.js"></script>
+<script>
+const API = "https://blockmap.kochurin9315.workers.dev";
+const SHOW = ["YouTube", "Instagram", "WhatsApp", "Telegram Web", "Discord", "ChatGPT", "X (Twitter)", "Facebook", "Google"];
+const $ = id => document.getElementById(id);
+let hours = 24;
+
+const color = p => {
+  if (p == null) return "transparent";
+  const a = Math.min(p / 100, 1);
+  // от зелёного к красному через жёлтый
+  const h = 130 - 130 * a;
+  return `hsl(${h} 70% ${88 - 18 * a}%)`;
+};
+const cell = p => `<td class="c" style="background:${color(p)}">${p}%</td>`;
+
+function table(list, label) {
+  if (!list.length) return "";
+  const head = `<tr><th class="n">${label}</th><th>Проверок</th><th>Белые списки</th>${SHOW.map(s => `<th>${s}</th>`).join("")}</tr>`;
+  const rows = list.map(g => `<tr><td class="n">${g.name}</td><td class="c">${g.n}</td>${cell(g.wl)}${SHOW.map(s => cell(g.bad[s])).join("")}</tr>`).join("");
+  return `<div class="tbl"><table>${head}${rows}</table></div>`;
+}
+
+const regName = c => (window.REGIONS[c] || [c || "Не определено"])[0];
+const avgBad = g => g.bad ? Math.round(SHOW.reduce((s, k) => s + g.bad[k], 0) / SHOW.length) : null;
+let showAll = false;
+function regionTable(list) {
+  const by = Object.fromEntries(list.map(g => [g.name, g]));
+  const rows = Object.keys(window.REGIONS).map(c => by[c] || { name: c, n: 0 })
+    .concat(list.filter(g => !window.REGIONS[g.name]))
+    .sort((x, y) => (y.n - x.n) || regName(x.name).localeCompare(regName(y.name), "ru"));
+  const visible = showAll ? rows : rows.filter(g => g.n > 0);
+  const head = `<tr><th class="n">Регион</th><th>Проверок</th><th>Белые списки</th>${SHOW.map(s => `<th>${s}</th>`).join("")}</tr>`;
+  const body = visible.map(g => g.bad
+    ? `<tr><td class="n">${regName(g.name)}</td><td class="c">${g.n}</td>${cell(g.wl)}${SHOW.map(s => cell(g.bad[s])).join("")}</tr>`
+    : `<tr class="nodata"><td class="n">${regName(g.name)}</td><td class="c">${g.n}</td><td colspan="${SHOW.length + 1}">${g.n ? "мало проверок" : "нет проверок"}</td></tr>`).join("");
+  const btn = `<button class="more" onclick="showAll=!showAll;load()">${showAll ? "Скрыть регионы без проверок" : `Показать все ${rows.length} регионов`}</button>`;
+  return (visible.length ? `<div class="tbl"><table>${head}${body}</table></div>` : `<div class="empty">Пока ни в одном регионе нет проверок</div>`) + btn;
+}
+
+let globe = null;
+function drawGlobe(list) {
+  if (!window.Globe) return;
+  const by = Object.fromEntries(list.map(g => [g.name, g]));
+  const pts = Object.entries(window.REGIONS).map(([c, [name, lat, lng]]) => {
+    const g = by[c] || { n: 0 }, b = avgBad(g);
+    const col = b == null ? "#8a8f9c" : b < 25 ? "#3fbf6a" : b < 60 ? "#e8b23a" : "#e0443e";
+    return { lat, lng, name, g, b, col, alt: g.n ? Math.min(0.04 + g.n / 40, 0.45) : 0.012, r: g.n ? 0.55 : 0.32 };
+  });
+  const tip = p => `<div class="gtip"><b>${p.name}</b><br>${p.g.n ? `Проверок: ${p.g.n}` : "Пока нет проверок"}${p.g.bad
+    ? `<br>Белые списки: ${p.g.wl}%<br>${SHOW.filter(s => p.g.bad[s] >= 50).map(s => `✕ ${s} ${p.g.bad[s]}%`).join("<br>") || "Почти всё открывается"}` : p.g.n ? "<br>Мало проверок для выводов" : ""}</div>`;
+  if (!globe) {
+    const el = document.getElementById("globe");
+    globe = Globe()(el)
+      .globeImageUrl("https://cdn.jsdelivr.net/npm/three-globe@2.45.3/example/img/earth-blue-marble.jpg")
+      .bumpImageUrl("https://cdn.jsdelivr.net/npm/three-globe@2.45.3/example/img/earth-topology.png")
+      .backgroundColor("rgba(0,0,0,0)")
+      .atmosphereColor("#9fb8ff").atmosphereAltitude(0.18)
+      .pointLat("lat").pointLng("lng").pointAltitude("alt").pointRadius("r").pointColor("col").pointLabel(tip)
+      .pointsMerge(false).pointsTransitionDuration(800);
+    globe.pointOfView({ lat: 57, lng: 75, altitude: 1.9 }, 0);
+    const c = globe.controls(); c.autoRotate = true; c.autoRotateSpeed = 0.35; c.enableZoom = true;
+    el.addEventListener("pointerdown", () => { c.autoRotate = false; }, { once: true });
+    const fit = () => globe.width(el.clientWidth).height(el.clientHeight);
+    addEventListener("resize", fit); fit();
+  }
+  globe.pointsData(pts);
+}
+
+async function load() {
+  $("status").textContent = "Загружаю…";
+  try {
+    const d = await (await fetch(`${API}/stats?hours=${hours}`)).json();
+    $("status").textContent = `Обновлено ${new Date(d.updated).toLocaleTimeString("ru-RU", { hour: "2-digit", minute: "2-digit" })}`;
+    const a = d.all;
+    $("kpis").innerHTML = a ? [
+      [d.total, "проверок из России"],
+      [a.wl + "%", "похожи на белые списки"],
+      [a.bad["YouTube"] + "%", "не открывают YouTube"],
+      [a.bad["WhatsApp"] + "%", "не открывают WhatsApp"],
+    ].map(([b, s]) => `<div class="kpi"><b>${b}</b><small>${s}</small></div>`).join("") : "";
+    drawGlobe(d.regions);
+    if (!a) {
+      $("body").innerHTML = `<h2>Пока мало данных</h2><div class="empty">За этот период меньше 3 проверок из России. <a href="./">Пройдите проверку</a> и отправьте ссылку друзьям на других операторах — сводка появится, когда наберётся хотя бы три результата</div>`;
+      return;
+    }
+    $("body").innerHTML =
+      `<h2>По операторам</h2><p class="hint">Доля проверок, где сервис не открылся или открывался медленно</p>${table(d.operators, "Оператор") || '<div class="empty">Пока ни у одного оператора нет трёх проверок</div>'}` +
+      `<h2>По регионам</h2><p class="hint">Регион определяется по подключению и может быть неточным, особенно на мобильном интернете. Разбивка видна, когда в регионе 3 проверки и больше</p>${regionTable(d.regions)}` +
+      `<div class="legend"><span><i style="background:${color(0)}"></i>всё открывается</span><span><i style="background:${color(50)}"></i>у половины не открывается</span><span><i style="background:${color(100)}"></i>не открывается ни у кого</span></div>`;
+  } catch (e) {
+    $("status").textContent = "Не удалось загрузить сводку, попробуйте позже";
+  }
+}
+
+$("period").querySelectorAll(".chip").forEach(b => b.onclick = () => {
+  hours = +b.dataset.h;
+  $("period").querySelectorAll(".chip").forEach(c => c.setAttribute("aria-pressed", c === b));
+  load();
+});
+load();
+</script>
+</body>
+</html>

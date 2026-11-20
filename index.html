@@ -48,7 +48,10 @@ button:disabled{opacity:.5;cursor:default}
 .item.bad .s{color:var(--bad)}.item.bad .s::before{background:var(--bad)}
 .item.wait .s::before{animation:p 1s infinite}
 @keyframes p{50%{opacity:.3}}
-.note{margin-top:30px;font-size:14px;line-height:1.6;color:var(--muted);max-width:680px}
+.share{display:flex;align-items:center;gap:8px;margin-top:26px;font-size:15px;color:#444;cursor:pointer}
+.share input{width:18px;height:18px;accent-color:var(--ink)}
+.share a{color:var(--ink);font-weight:700}
+.note{margin-top:14px;font-size:14px;line-height:1.6;color:var(--muted);max-width:680px}
 .note b{color:var(--ink)}
 footer{margin-top:36px;padding-top:18px;border-top:2px solid var(--ink);display:flex;flex-wrap:wrap;gap:8px 18px;font-size:14px;color:var(--muted)}
 footer b{color:var(--ink)}
@@ -76,10 +79,13 @@ footer a{color:var(--ink)}
 
   <div class="groups" id="groups"></div>
 
-  <p class="note"><b>Как это работает.</b> Страница пробует загрузить маленький файл с каждого сервиса. Не ответил за 8 секунд или соединение оборвалось — сервис помечается как недоступный. Отвечает дольше 3 секунд — как медленный. Результаты остаются у вас в браузере и никуда не отправляются</p>
+  <label class="share"><input type="checkbox" id="share" checked> Анонимно добавить мой результат в <a href="map.html">сводку «Блокировки сейчас»</a></label>
+
+  <p class="note"><b>Как это работает.</b> Страница пробует загрузить маленький файл с каждого сервиса. Не ответил за 8 секунд или соединение оборвалось — сервис помечается как недоступный. Отвечает дольше 3 секунд — как медленный. Если галочка выше стоит, в сводку уходит только список «открылось / не открылось», а оператора и регион сервер определяет по подключению. IP-адрес не сохраняется</p>
 
   <footer>
     <span><b>Сеть есть. Интернет тоже</b></span>
+    <span><a href="map.html">Блокировки сейчас: сводка по операторам</a></span>
     <span>Код открыт: <a href="https://github.com/Kochurin/blockcheck">github.com/Kochurin/blockcheck</a></span>
     <span><a href="https://kochurin.github.io/whitelist-guide/">Гайд по белым спискам</a></span>
   </footer>
@@ -237,6 +243,17 @@ async function run() {
   await Promise.all(items.map(check));
   summarize();
   $("run").disabled = false;
+  report();
+}
+
+// Анонимная отправка в сводку: только состояние каждого сервиса. Оператора и регион определяет сервер, IP не хранится
+const API = "https://blockmap.kochurin9315.workers.dev";
+try { $("share").checked = localStorage.getItem("bc-share") !== "0"; } catch (e) {}
+$("share").onchange = () => { try { localStorage.setItem("bc-share", $("share").checked ? "1" : "0"); } catch (e) {} };
+async function report() {
+  if (!$("share").checked || API.includes("REPLACE")) return;
+  const r = Object.fromEntries(items.map(i => [i.name, i.state]));
+  try { await fetch(API + "/report", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ r }) }); } catch (e) {}
 }
 
 $("run").onclick = run;

@@ -1,0 +1,11 @@
+name = "blockmap"
+main = "src/index.js"
+compatibility_date = "2026-10-01"
+
+[[d1_databases]]
+binding = "DB"
+database_name = "blockmap"
+database_id = "5b706591-36fe-49a5-8123-154185023b10"
+
+[triggers]
+crons = ["17 3 * * *"]   # раз в сутки чистим старое
