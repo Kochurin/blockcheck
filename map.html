@@ -4,7 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>Блокировки сейчас — что не открывается у МТС, Билайна, МегаФона, Т2 и по регионам</title>
-<meta name="description" content="Живая сводка блокировок в России по результатам проверок пользователей: какие сервисы не открываются у каждого оператора и в каждом регионе, где включены белые списки">
+<meta name="description" content="Живая сводка блокировок в России по замерам OONI и проверкам пользователей: какие сервисы не открываются у каждого оператора и в каждом регионе, где включены белые списки">
 <meta property="og:title" content="Блокировки сейчас">
 <meta property="og:description" content="Что не открывается у вашего оператора и в вашем регионе — по проверкам пользователей за последние сутки">
 <meta property="og:image" content="https://kochurin.github.io/blockcheck/map-preview.png">
@@ -33,7 +33,7 @@ h1 span{display:block;color:var(--grey)}
 .kpi b{display:block;font-size:34px;font-weight:900;letter-spacing:-1px}
 .kpi small{font-size:14px;color:var(--muted)}
 h2{margin:36px 0 12px;font-size:22px;font-weight:900;letter-spacing:-.3px}
-.hint{font-size:14px;color:var(--muted);margin:-4px 0 12px}
+.hint{font-size:14px;color:var(--muted);margin:-4px 0 12px;line-height:1.5}.hint a{color:var(--ink)}
 .tbl{overflow-x:auto;background:var(--card);border-radius:18px;padding:6px}
 table{border-collapse:separate;border-spacing:3px;width:100%;font-size:14px}
 th{font-weight:700;color:var(--muted);font-size:12px;text-align:center;padding:6px 4px;white-space:nowrap}
@@ -72,7 +72,7 @@ footer a{color:var(--ink)}footer b{color:var(--ink)}
 <div class="wrap"><main>
   <div class="k">SKYRIMVPN</div>
   <h1>Блокировки<span>сейчас</span></h1>
-  <p class="lead">Сводка по проверкам людей, которые прошли <a href="./">«Что у меня заблокировано»</a>. Оператора и регион определяет сервер по подключению, IP-адреса не сохраняются. Пройдите проверку сами — ваш результат тоже попадёт сюда</p>
+  <p class="lead">Сводка по открытым замерам <a href="https://ooni.org/" target="_blank" rel="noopener">OONI</a>, которые обновляются каждый час, и по проверкам людей, прошедших <a href="./">«Что у меня заблокировано»</a>. Оператора и регион определяет сервер по подключению, IP-адреса не сохраняются. Пройдите проверку сами — ваш результат тоже попадёт сюда</p>
 
   <div class="bar" id="period">
     <button class="chip" data-h="6">6 часов</button>
@@ -177,6 +177,20 @@ function drawGlobe(list) {
   globe.pointsData(pts);
 }
 
+const cleanOp = n => n.replace(/^[A-Z0-9-]*-AS\s+/i, "").replace(/^AS-[A-Z0-9-]+\s+/i, "");
+function ooniBlock(o) {
+  if (!o || !o.operators.length) return "";
+  const svcs = o.services;
+  const kp = svcs.map(s => `<div class="kpi"><b style="color:${o.all[s] >= 60 ? "#c0392b" : o.all[s] >= 25 ? "#b7791f" : "#2f855a"}">${o.all[s]}%</b><small>${s}</small></div>`).join("");
+  const head = `<tr><th class="n">Сеть</th><th>Измерений</th>${svcs.map(s => `<th>${s}</th>`).join("")}</tr>`;
+  const rows = o.operators.map(g => `<tr><td class="n">${cleanOp(g.name)}</td><td class="c">${g.n.toLocaleString("ru-RU")}</td>${svcs.map(s => g.bad[s] == null ? "<td></td>" : cell(g.bad[s])).join("")}</tr>`).join("");
+  const when = o.updated ? new Date(o.updated).toLocaleString("ru-RU", { day: "numeric", month: "long", hour: "2-digit", minute: "2-digit" }) : "";
+  return `<h2>Автоматические замеры OONI за ${o.days} дней</h2>
+    <p class="hint">${o.total.toLocaleString("ru-RU")} измерений добровольцев <a href="https://ooni.org/" target="_blank" rel="noopener">OONI</a> из России, обновляется каждый час${when ? ", последнее обновление " + when : ""}. Цифра — доля измерений с признаками блокировки. Чаще это домашний интернет, мобильные белые списки сюда почти не попадают</p>
+    <div class="kpis">${kp}</div>
+    <div class="tbl" style="margin-top:12px"><table>${head}${rows}</table></div>`;
+}
+
 async function load() {
   $("status").textContent = "Загружаю…";
   try {
@@ -191,11 +205,11 @@ async function load() {
     ].map(([b, s]) => `<div class="kpi"><b>${b}</b><small>${s}</small></div>`).join("") : "";
     drawGlobe(d.regions);
     if (!a) {
-      $("body").innerHTML = `<h2>Пока мало данных</h2><div class="empty">За этот период меньше 3 проверок из России. <a href="./">Пройдите проверку</a> и отправьте ссылку друзьям на других операторах — сводка появится, когда наберётся хотя бы три результата</div>`;
+      $("body").innerHTML = ooniBlock(d.ooni) + `<h2>Проверки посетителей</h2><div class="empty">За этот период меньше 3 проверок из России. <a href="./">Пройдите проверку</a> и отправьте ссылку друзьям на других операторах — сводка появится, когда наберётся хотя бы три результата</div>`;
       return;
     }
-    $("body").innerHTML =
-      `<h2>По операторам</h2><p class="hint">Доля проверок, где сервис не открылся или открывался медленно</p>${table(d.operators, "Оператор") || '<div class="empty">Пока ни у одного оператора нет трёх проверок</div>'}` +
+    $("body").innerHTML = ooniBlock(d.ooni) +
+      `<h2>Проверки посетителей: по операторам</h2><p class="hint">Доля проверок, где сервис не открылся или открывался медленно</p>${table(d.operators, "Оператор") || '<div class="empty">Пока ни у одного оператора нет трёх проверок</div>'}` +
       `<h2>По регионам</h2><p class="hint">Регион определяется по подключению и может быть неточным, особенно на мобильном интернете. Разбивка видна, когда в регионе 3 проверки и больше</p>${regionTable(d.regions)}` +
       `<div class="legend"><span><i style="background:${color(0)}"></i>всё открывается</span><span><i style="background:${color(50)}"></i>у половины не открывается</span><span><i style="background:${color(100)}"></i>не открывается ни у кого</span></div>`;
   } catch (e) {

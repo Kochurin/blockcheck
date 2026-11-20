@@ -8,7 +8,7 @@ const MIN_GROUP = 3;          // группы меньше этого не по�
 const KEEP_DAYS = 30;
 
 const OPERATORS = [
-  [/mts|mobile telesystems/i, "МТС"], [/vimpelcom|beeline/i, "Билайн"], [/megafon/i, "МегаФон"],
+  [/mts pjsc|^mts |mobile telesystems/i, "МТС"], [/vimpelcom|beeline/i, "Билайн"], [/megafon/i, "МегаФон"],
   [/tele2|t2 mobile/i, "Т2"], [/rostelecom/i, "Ростелеком"], [/er-telecom|dom\.ru/i, "Дом.ру"],
   [/yota|scartel/i, "Yota"], [/mgts|moscow city telephone/i, "МГТС"], [/akado/i, "Акадо"],
 ];
@@ -82,8 +82,70 @@ async function stats(url, env, origin) {
   const { results } = await env.DB.prepare("SELECT region, rc, op, res, wl FROM reports WHERE ts > ? AND country = 'RU'").bind(since).all();
   const rows = results.map(r => ({ ...r, res: JSON.parse(r.res) }));
   const all = group(rows.map(r => ({ ...r, all: "Россия" })), "all")[0] || null;
-  return json({ hours, total: rows.length, services: SERVICES, all, operators: group(rows, "op"), regions: group(rows, "rc", true), updated: new Date().toISOString() },
+  let ooni = null;
+  try { ooni = await ooniStats(env); } catch {}
+  return json({ hours, total: rows.length, services: SERVICES, all, operators: group(rows, "op"), regions: group(rows, "rc", true), ooni, updated: new Date().toISOString() },
     origin, 200, { "Cache-Control": "public, max-age=120" });
+}
+
+// ---------- OONI: открытые измерения добровольцев (ooni.org), подтягиваем раз в час ----------
+const OONI_DOMAINS = {
+  "YouTube": ["www.youtube.com"], "Instagram": ["www.instagram.com"], "WhatsApp": ["www.whatsapp.com"],
+  "Telegram Web": ["telegram.org"], "Discord": ["discord.com"], "ChatGPT": ["chatgpt.com", "chat.openai.com"],
+  "X (Twitter)": ["twitter.com", "x.com"], "Facebook": ["www.facebook.com"], "Google": ["www.google.com"],
+};
+const OONI_DAYS = 7;          // OONI публикует с задержкой, берём неделю
+const OONI_MIN = 30;          // оператора показываем, если у него хотя бы 30 измерений
+
+async function ooniImport(env) {
+  const until = new Date(Date.now() + 864e5).toISOString().slice(0, 10);
+  const since = new Date(Date.now() - OONI_DAYS * 864e5).toISOString().slice(0, 10);
+  const rows = [];
+  for (const [svc, domains] of Object.entries(OONI_DOMAINS)) {
+    for (const d of domains) {
+      const u = `https://api.ooni.io/api/v1/aggregation?probe_cc=RU&test_name=web_connectivity&domain=${d}&since=${since}&until=${until}&axis_x=probe_asn`;
+      const r = await fetch(u, { headers: { "User-Agent": "blockmap (github.com/Kochurin/blockcheck)" } });
+      if (!r.ok) continue;
+      for (const x of (await r.json()).result || []) rows.push([svc, x.probe_asn, x.measurement_count, x.anomaly_count + x.confirmed_count]);
+    }
+  }
+  if (!rows.length) return;
+  const stmts = [env.DB.prepare("DELETE FROM ooni")];
+  for (const r of rows) stmts.push(env.DB.prepare("INSERT INTO ooni (svc, asn, n, bad) VALUES (?, ?, ?, ?)").bind(...r));
+  stmts.push(env.DB.prepare("INSERT OR REPLACE INTO meta (k, v) VALUES ('ooni_updated', ?)").bind(new Date().toISOString()));
+  await env.DB.batch(stmts);
+  // названия сетей (кому принадлежит AS) берём из RIPE, кешируем навсегда
+  const { results } = await env.DB.prepare(
+    "SELECT o.asn, SUM(o.n) AS t FROM ooni o LEFT JOIN asn a ON a.asn = o.asn WHERE a.asn IS NULL GROUP BY o.asn ORDER BY t DESC LIMIT 25").all();
+  for (const { asn } of results) {
+    try {
+      const j = await (await fetch(`https://stat.ripe.net/data/as-overview/data.json?resource=AS${asn}`)).json();
+      await env.DB.prepare("INSERT OR REPLACE INTO asn (asn, holder) VALUES (?, ?)").bind(asn, j?.data?.holder || "").run();
+    } catch {}
+  }
+}
+
+async function ooniStats(env) {
+  const { results } = await env.DB.prepare("SELECT o.svc, o.asn, o.n, o.bad, a.holder FROM ooni o LEFT JOIN asn a ON a.asn = o.asn").all();
+  if (!results.length) return null;
+  const upd = await env.DB.prepare("SELECT v FROM meta WHERE k = 'ooni_updated'").first();
+  const svcs = Object.keys(OONI_DOMAINS);
+  const ops = new Map(), all = Object.fromEntries(svcs.map(s => [s, [0, 0]]));
+  for (const r of results) {
+    const name = r.holder ? opName(r.holder) : `AS${r.asn}`;
+    let g = ops.get(name);
+    if (!g) ops.set(name, g = { name, n: 0, s: Object.fromEntries(svcs.map(s => [s, [0, 0]])) });
+    g.n += r.n; g.s[r.svc][0] += r.n; g.s[r.svc][1] += r.bad;
+    all[r.svc][0] += r.n; all[r.svc][1] += r.bad;
+  }
+  const pct = ([n, b]) => n ? Math.round(100 * b / n) : null;
+  return {
+    days: OONI_DAYS, updated: upd?.v || null, services: svcs,
+    all: Object.fromEntries(svcs.map(s => [s, pct(all[s])])),
+    total: Object.values(all).reduce((t, [n]) => t + n, 0),
+    operators: [...ops.values()].filter(g => g.n >= OONI_MIN).sort((a, b) => b.n - a.n).slice(0, 15)
+      .map(g => ({ name: g.name, n: g.n, bad: Object.fromEntries(svcs.map(s => [s, pct(g.s[s])])) })),
+  };
 }
 
 export default {
@@ -94,7 +156,8 @@ export default {
     if (url.pathname === "/stats" && req.method === "GET") return stats(url, env, origin);
     return json({ name: "blockmap", endpoints: ["POST /report", "GET /stats?hours=24"] }, origin);
   },
-  async scheduled(_, env) {
+  async scheduled(event, env) {
+    if (event.cron !== "17 3 * * *") { await ooniImport(env); return; }
     await env.DB.prepare("DELETE FROM reports WHERE ts < ?").bind(Date.now() - KEEP_DAYS * 864e5).run();
     await env.DB.prepare("DELETE FROM seen WHERE ts < ?").bind(Date.now() - 864e5).run();
   },
