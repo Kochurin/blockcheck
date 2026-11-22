@@ -42,6 +42,9 @@ button:disabled{opacity:.5;cursor:default}
 .item{display:flex;align-items:center;justify-content:space-between;gap:10px;background:var(--card);border-radius:14px;padding:14px 16px;box-shadow:0 1px 0 var(--line)}
 .item .n{font-weight:600;font-size:16px}
 .item .s{font-size:13px;font-weight:700;white-space:nowrap;color:var(--muted)}
+.item.has-guide{display:grid;grid-template-columns:1fr auto}
+.item-guide{grid-column:1/-1;display:flex;align-items:center;min-height:44px;padding-top:8px;border-top:1px solid var(--line);color:var(--ink);font-size:13px;font-weight:700;line-height:1.4;text-underline-offset:3px}
+.item-guide:focus-visible{outline:2px solid var(--ink);outline-offset:4px;border-radius:3px}
 .item .s::before{content:"";display:inline-block;width:9px;height:9px;border-radius:50%;background:#c8c8cc;margin-right:7px;vertical-align:1px}
 .item.ok .s{color:var(--ok)}.item.ok .s::before{background:var(--ok)}
 .item.slow .s{color:var(--slow)}.item.slow .s::before{background:var(--slow)}
@@ -194,6 +197,16 @@ function summarize() {
     p.textContent = "Не открываются даже Яндекс и Госуслуги. Проверьте подключение и запустите проверку ещё раз";
     $("status").textContent = "Готово";
     return;
+  }
+
+  const youtube = foreign.find(i => i.name === "YouTube");
+  if (youtube && (youtube.state === "bad" || youtube.state === "slow")) {
+    const guide = document.createElement("a");
+    guide.className = "item-guide";
+    guide.href = "./youtube.html";
+    guide.textContent = "Проверить YouTube с VPN · 3 дня бесплатно";
+    youtube.el.classList.add("has-guide");
+    youtube.el.appendChild(guide);
   }
 
   const ok = foreign.length - bad.length - slow.length;

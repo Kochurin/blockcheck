@@ -27,6 +27,7 @@
 
 ## Если что-то не открывается
 
+- При медленном или недоступном YouTube карточка результата предлагает [инструкцию по повторной проверке](https://kochurin.github.io/blockcheck/youtube.html)
 - [Гайд: белые списки на мобильном интернете и что с ними делать](https://kochurin.github.io/whitelist-guide/)
 - [Бесплатные прокси для Telegram](https://github.com/Kochurin/telegram-mtproto-proxy)
 - VPN, который работает и на белых списках: [@SkyrimVPN_bot](https://t.me/SkyrimVPN_bot?start=blockcheck), первые 3 дня бесплатно · [сайт](https://skyrim.connecto.lol/?utm_source=blockcheck)
